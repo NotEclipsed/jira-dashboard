@@ -1,0 +1,70 @@
+.App {
+  text-align: center;
+}
+
+.ticket-card {
+  margin-bottom: 16px;
+  transition: transform 0.2s ease-in-out;
+}
+
+.ticket-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12);
+}
+
+.priority-high {
+  border-left: 4px solid #ff5630;
+}
+
+.priority-medium {
+  border-left: 4px solid #ff8b00;
+}
+
+.priority-low {
+  border-left: 4px solid #36b37e;
+}
+
+.status-chip {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 12px;
+  text-transform: uppercase;
+}
+
+.status-todo {
+  background-color: #dfe1e6;
+  color: #42526e;
+}
+
+.status-in-progress {
+  background-color: #0065ff;
+  color: white;
+}
+
+.status-done {
+  background-color: #36b37e;
+  color: white;
+}
+
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 200px;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 40px;
+  color: #6b778c;
+}
+
+.dashboard-stats {
+  margin-bottom: 24px;
+}
+
+.ticket-type-icon {
+  margin-right: 8px;
+  font-size: 18px;
+}
