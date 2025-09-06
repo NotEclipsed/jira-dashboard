@@ -28,71 +28,28 @@ Each ticket card shows:
 - Creation and last update timestamps
 - Quick actions menu
 
-## Architecture
+## 🚀 Quick Start
 
-This application uses a secure **client-server architecture**:
+### **One-Command Installation**
 
-- **Frontend (React)**: Modern SPA with Material-UI components
-- **Backend (Node.js/Express)**: Secure API server with authentication
-- **Session Management**: HIPAA-compliant session handling with automatic timeout
-- **Audit Logging**: Complete audit trail for all user actions
-- **Secure Proxy**: Backend handles all Jira API calls to protect credentials
+Install and run the entire Jira Dashboard with a single command:
 
-## Prerequisites
+```bash
+curl -s https://raw.githubusercontent.com/NotEclipsed/jira-dashboard/master/scripts/auto-setup.sh | bash
+```
 
-- **Node.js 18+** and npm
-- **A Jira Cloud instance**
-- **Jira API token** (see setup instructions below)
-- **PM2** (for production deployment)
+The script will ask for your:
+- **Jira Base URL** (e.g., `https://company.atlassian.net`)
+- **Jira Email** (your login email)
+- **Jira API Token** (see setup below)
 
-## Quick Start (Development)
+That's it! Everything else is automated.
 
-1. **Clone the repository**:
-   ```bash
-   git clone <your-repo-url>
-   cd jira-dashboard
-   ```
+### **After Installation**
 
-2. **Install all dependencies**:
-   ```bash
-   npm install
-   cd backend && npm install && cd ..
-   ```
-
-3. **Set up environment variables**:
-   ```bash
-   cp .env.example .env
-   cd backend && cp .env.example .env && cd ..
-   ```
-   
-   Edit `backend/.env` with your Jira details:
-   ```env
-   # Jira Configuration
-   JIRA_BASE_URL=https://your-domain.atlassian.net
-   JIRA_EMAIL=your-email@company.com
-   JIRA_API_TOKEN=your-api-token-here
-   
-   # Security
-   JWT_SECRET=your-secure-random-secret
-   SESSION_TIMEOUT=900000
-   
-   # Default Admin User
-   DEFAULT_ADMIN_USERNAME=admin
-   DEFAULT_ADMIN_PASSWORD=ChangeMe123!
-   ```
-
-4. **Start the development servers**:
-   ```bash
-   # Terminal 1 - Backend
-   cd backend && npm run dev
-   
-   # Terminal 2 - Frontend 
-   npm start
-   ```
-
-5. **Login** at `http://localhost:3000` with:
-   - Username: `admin`
-   - Password: `ChangeMe123!`
+- **Access:** `http://your-server-ip:3000`
+- **Login:** `admin` / `ChangeMe123!`
+- **Management:** `pm2 list`, `pm2 logs`, `pm2 restart all`
 
 ## Jira API Setup
 
@@ -122,41 +79,13 @@ Start the application and check the browser console for any authentication error
 - `npm test` - Run tests
 - `npm eject` - Eject from Create React App (not recommended)
 
-## Project Structure
+## Architecture
 
-```
-jira-dashboard/
-├── backend/                  # Node.js API Server
-│   ├── data/                 # User data storage
-│   ├── middleware/           # Authentication & logging
-│   ├── routes/               # API routes
-│   │   ├── auth.js           # Authentication endpoints
-│   │   └── jira.js           # Secure Jira proxy
-│   ├── services/             # Business logic
-│   ├── utils/                # Validation & utilities
-│   ├── app.js                # Express application
-│   ├── server.js             # Server entry point
-│   └── .env.example          # Backend environment template
-├── src/                      # React Frontend
-│   ├── components/
-│   │   ├── Dashboard.js      # Main dashboard component
-│   │   ├── Login.js          # Authentication form
-│   │   ├── LoadingScreen.js  # Loading component
-│   │   ├── TicketCard.js     # Individual ticket card
-│   │   └── StatsCard.js      # Statistics display card
-│   ├── services/
-│   │   ├── authService.js    # Authentication API calls
-│   │   └── jiraService.js    # Jira API integration
-│   ├── App.js                # Main application with auth flow
-│   ├── App.css               # Application styles
-│   ├── index.js              # Application entry point
-│   └── index.css             # Global styles
-├── scripts/                  # Deployment scripts
-├── ecosystem.config.js       # PM2 process configuration
-├── .env.example              # Frontend environment template
-├── package.json             # Frontend dependencies
-└── README.md                # This file
-```
+Secure **client-server architecture** with authentication:
+- **Frontend (React)**: Modern dashboard with Material-UI
+- **Backend (Node.js)**: Secure API server with session management
+- **Authentication**: User login with automatic session timeout
+- **Security**: HIPAA-compliant audit logging and data protection
 
 ## Features in Detail
 
