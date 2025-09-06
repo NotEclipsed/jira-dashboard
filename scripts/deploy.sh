@@ -7,7 +7,7 @@ set -e  # Exit on any error
 
 DEPLOY_DIR="/opt/jira-dashboard"
 BACKUP_DIR="/opt/jira-dashboard-backup"
-REPO_URL="https://github.com/your-username/jira-dashboard.git"  # Update this with your repo
+REPO_URL="https://github.com/NotEclipsed/jira-dashboard.git"
 BRANCH="master"
 
 echo "🚀 Starting Jira Dashboard Deployment"

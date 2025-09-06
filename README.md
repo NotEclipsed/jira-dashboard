@@ -1,15 +1,18 @@
 # Jira Dashboard
 
-A single pane of glass for managing your Jira tickets. View all tickets assigned to and created by you in a modern, human-friendly interface.
+A secure, enterprise-ready single pane of glass for managing your Jira tickets. View all tickets assigned to and created by you through a modern, authenticated web interface.
 
 ## Features
 
+- 🔐 **Secure Authentication**: User login system with session management
 - 📊 **Dashboard Overview**: Get quick stats on your assigned and created tickets
 - 🔍 **Smart Filtering**: Search and filter tickets by status, priority, and project
 - 📱 **Responsive Design**: Works seamlessly on desktop and mobile devices
 - 🚀 **Quick Actions**: Add comments and update tickets without leaving the dashboard
 - 🎨 **Modern UI**: Built with Material-UI for a clean, professional look
 - ⚡ **Real-time Data**: Fetches the latest ticket information from Jira
+- 🛡️ **HIPAA Compliant**: Enterprise-grade security with audit logging
+- 🔄 **Session Management**: Automatic session timeout and security controls
 
 ## Screenshots
 
@@ -25,39 +28,71 @@ Each ticket card shows:
 - Creation and last update timestamps
 - Quick actions menu
 
+## Architecture
+
+This application uses a secure **client-server architecture**:
+
+- **Frontend (React)**: Modern SPA with Material-UI components
+- **Backend (Node.js/Express)**: Secure API server with authentication
+- **Session Management**: HIPAA-compliant session handling with automatic timeout
+- **Audit Logging**: Complete audit trail for all user actions
+- **Secure Proxy**: Backend handles all Jira API calls to protect credentials
+
 ## Prerequisites
 
-- Node.js 16+ and npm
-- A Jira Cloud instance
-- Jira API token (see setup instructions below)
+- **Node.js 18+** and npm
+- **A Jira Cloud instance**
+- **Jira API token** (see setup instructions below)
+- **PM2** (for production deployment)
 
-## Installation
+## Quick Start (Development)
 
-1. **Clone or download this repository**
+1. **Clone the repository**:
+   ```bash
+   git clone <your-repo-url>
+   cd jira-dashboard
+   ```
 
-2. **Install dependencies**:
+2. **Install all dependencies**:
    ```bash
    npm install
+   cd backend && npm install && cd ..
    ```
 
 3. **Set up environment variables**:
    ```bash
    cp .env.example .env
+   cd backend && cp .env.example .env && cd ..
    ```
    
-   Edit `.env` and fill in your Jira details:
+   Edit `backend/.env` with your Jira details:
    ```env
-   REACT_APP_JIRA_BASE_URL=https://your-domain.atlassian.net
-   REACT_APP_JIRA_EMAIL=your-email@company.com
-   REACT_APP_JIRA_API_TOKEN=your-api-token-here
+   # Jira Configuration
+   JIRA_BASE_URL=https://your-domain.atlassian.net
+   JIRA_EMAIL=your-email@company.com
+   JIRA_API_TOKEN=your-api-token-here
+   
+   # Security
+   JWT_SECRET=your-secure-random-secret
+   SESSION_TIMEOUT=900000
+   
+   # Default Admin User
+   DEFAULT_ADMIN_USERNAME=admin
+   DEFAULT_ADMIN_PASSWORD=ChangeMe123!
    ```
 
-4. **Start the development server**:
+4. **Start the development servers**:
    ```bash
+   # Terminal 1 - Backend
+   cd backend && npm run dev
+   
+   # Terminal 2 - Frontend 
    npm start
    ```
 
-5. **Open your browser** to `http://localhost:3000`
+5. **Login** at `http://localhost:3000` with:
+   - Username: `admin`
+   - Password: `ChangeMe123!`
 
 ## Jira API Setup
 
@@ -91,22 +126,35 @@ Start the application and check the browser console for any authentication error
 
 ```
 jira-dashboard/
-├── public/
-│   └── index.html
-├── src/
+├── backend/                  # Node.js API Server
+│   ├── data/                 # User data storage
+│   ├── middleware/           # Authentication & logging
+│   ├── routes/               # API routes
+│   │   ├── auth.js           # Authentication endpoints
+│   │   └── jira.js           # Secure Jira proxy
+│   ├── services/             # Business logic
+│   ├── utils/                # Validation & utilities
+│   ├── app.js                # Express application
+│   ├── server.js             # Server entry point
+│   └── .env.example          # Backend environment template
+├── src/                      # React Frontend
 │   ├── components/
 │   │   ├── Dashboard.js      # Main dashboard component
+│   │   ├── Login.js          # Authentication form
+│   │   ├── LoadingScreen.js  # Loading component
 │   │   ├── TicketCard.js     # Individual ticket card
 │   │   └── StatsCard.js      # Statistics display card
 │   ├── services/
+│   │   ├── authService.js    # Authentication API calls
 │   │   └── jiraService.js    # Jira API integration
-│   ├── App.js                # Main application component
+│   ├── App.js                # Main application with auth flow
 │   ├── App.css               # Application styles
 │   ├── index.js              # Application entry point
 │   └── index.css             # Global styles
-├── .env.example              # Environment template
-├── .gitignore               # Git ignore rules
-├── package.json             # Project configuration
+├── scripts/                  # Deployment scripts
+├── ecosystem.config.js       # PM2 process configuration
+├── .env.example              # Frontend environment template
+├── package.json             # Frontend dependencies
 └── README.md                # This file
 ```
 

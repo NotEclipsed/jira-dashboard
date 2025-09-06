@@ -8,7 +8,11 @@
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "dev": "npm start"
+    "dev": "npm start",
+    "test-connection": "node scripts/test-connection.js",
+    "setup-test-data": "node scripts/setup-test-data.js",
+    "start-backend": "cd backend && npm run dev",
+    "install-all": "npm install && cd backend && npm install"
   },
   "keywords": [
     "jira",

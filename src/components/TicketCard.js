@@ -31,6 +31,7 @@ import {
 } from '@mui/icons-material';
 import { formatDistanceToNow, format } from 'date-fns';
 import { jiraService } from '../services/jiraService';
+import { validateComment } from '../utils/validation';
 
 function TicketCard({ ticket }) {
   const [anchorEl, setAnchorEl] = useState(null);
@@ -64,7 +65,12 @@ function TicketCard({ ticket }) {
   };
 
   const handleAddComment = async () => {
-    if (!comment.trim()) return;
+    // Validate comment before sending
+    const validation = validateComment(comment);
+    if (!validation.isValid) {
+      showNotification(validation.error, 'error');
+      return;
+    }
     
     try {
       setLoading(true);
