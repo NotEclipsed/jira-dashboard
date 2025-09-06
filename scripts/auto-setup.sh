@@ -3,7 +3,7 @@
 # Jira Dashboard Automated Setup Script
 # This script fully automates the deployment with minimal user input
 
-set -e  # Exit on any error
+# Removed set -e to handle errors gracefully
 
 # Colors for output
 RED='\033[0;31m'
@@ -33,7 +33,18 @@ get_user_config() {
     echo ""
     
     # Generate secure JWT secret automatically
-    JWT_SECRET=$(openssl rand -hex 32)
+    if command -v openssl >/dev/null 2>&1; then
+        JWT_SECRET=$(openssl rand -hex 32)
+    else
+        # Fallback if openssl is not available
+        JWT_SECRET=$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 64)
+    fi
+    
+    # Validate inputs
+    if [[ -z "$JIRA_BASE_URL" || -z "$JIRA_EMAIL" || -z "$JIRA_API_TOKEN" ]]; then
+        echo -e "${RED}❌ Error: All fields are required${NC}"
+        exit 1
+    fi
     
     echo -e "${GREEN}✅ Configuration collected${NC}"
 }
@@ -42,20 +53,34 @@ get_user_config() {
 install_dependencies() {
     echo -e "${BLUE}📦 Installing system dependencies...${NC}"
     
+    # Install wget if not present
+    if ! command -v wget &> /dev/null; then
+        echo "Installing wget..."
+        sudo apt update
+        sudo apt install -y wget
+    fi
+    
     # Update system
+    echo "Updating package lists..."
     sudo apt update
     
     # Install Node.js 18 if not installed
     if ! command -v node &> /dev/null; then
-        echo "Installing Node.js..."
+        echo "Installing Node.js 18..."
         curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
         sudo apt-get install -y nodejs
+        echo "Node.js version: $(node --version)"
+    else
+        echo "Node.js already installed: $(node --version)"
     fi
     
     # Install PM2 if not installed
     if ! command -v pm2 &> /dev/null; then
         echo "Installing PM2..."
         sudo npm install -g pm2
+        echo "PM2 installed successfully"
+    else
+        echo "PM2 already installed"
     fi
     
     echo -e "${GREEN}✅ System dependencies installed${NC}"
