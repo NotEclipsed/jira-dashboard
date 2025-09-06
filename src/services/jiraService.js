@@ -1,23 +1,38 @@
 import axios from 'axios';
+import { authService } from './authService';
 
 class JiraService {
   constructor() {
-    this.baseURL = process.env.REACT_APP_JIRA_BASE_URL;
-    this.email = process.env.REACT_APP_JIRA_EMAIL;
-    this.apiToken = process.env.REACT_APP_JIRA_API_TOKEN;
+    // Use secure backend proxy instead of direct Jira API calls
+    this.backendURL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:3001';
     
-    // Create axios instance with auth
+    // Create axios instance for backend API calls
     this.api = axios.create({
-      baseURL: `${this.baseURL}/rest/api/3`,
-      auth: {
-        username: this.email,
-        password: this.apiToken
-      },
+      baseURL: `${this.backendURL}/api/jira`,
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json'
-      }
+      },
+      withCredentials: true, // Important for session cookies
+      timeout: 30000 // 30 second timeout
     });
+
+    // Add response interceptor to handle authentication errors
+    this.api.interceptors.response.use(
+      (response) => response,
+      (error) => {
+        if (authService.isAuthError(error)) {
+          // Clear cached user data
+          localStorage.removeItem('user');
+          // Let the calling component handle the auth error
+          const authError = new Error('Authentication required');
+          authError.requiresLogin = true;
+          authError.originalError = error;
+          throw authError;
+        }
+        throw error;
+      }
+    );
   }
 
   /**
@@ -25,10 +40,11 @@ class JiraService {
    */
   async getCurrentUser() {
     try {
-      const response = await this.api.get('/myself');
+      const response = await this.api.get('/user');
       return response.data;
     } catch (error) {
-      throw new Error(`Failed to get user info: ${error.message}`);
+      console.error('Failed to get user info:', error);
+      throw new Error(this.getErrorMessage(error));
     }
   }
 
@@ -37,18 +53,16 @@ class JiraService {
    */
   async getAssignedTickets(userEmail) {
     try {
-      const jql = `assignee = "${userEmail}" ORDER BY updated DESC`;
-      const response = await this.api.get('/search', {
+      const response = await this.api.get('/tickets/assigned', {
         params: {
-          jql,
-          maxResults: 100,
-          fields: 'key,summary,description,status,priority,issuetype,assignee,reporter,created,updated,project'
+          maxResults: 100
         }
       });
       
       return response.data.issues.map(this.transformIssue);
     } catch (error) {
-      throw new Error(`Failed to get assigned tickets: ${error.message}`);
+      console.error('Failed to get assigned tickets:', error);
+      throw new Error(this.getErrorMessage(error));
     }
   }
 
@@ -57,18 +71,16 @@ class JiraService {
    */
   async getCreatedTickets(userEmail) {
     try {
-      const jql = `reporter = "${userEmail}" ORDER BY created DESC`;
-      const response = await this.api.get('/search', {
+      const response = await this.api.get('/tickets/created', {
         params: {
-          jql,
-          maxResults: 100,
-          fields: 'key,summary,description,status,priority,issuetype,assignee,reporter,created,updated,project'
+          maxResults: 100
         }
       });
       
       return response.data.issues.map(this.transformIssue);
     } catch (error) {
-      throw new Error(`Failed to get created tickets: ${error.message}`);
+      console.error('Failed to get created tickets:', error);
+      throw new Error(this.getErrorMessage(error));
     }
   }
 
@@ -77,10 +89,11 @@ class JiraService {
    */
   async getProjects() {
     try {
-      const response = await this.api.get('/project');
+      const response = await this.api.get('/projects');
       return response.data;
     } catch (error) {
-      throw new Error(`Failed to get projects: ${error.message}`);
+      console.error('Failed to get projects:', error);
+      throw new Error(this.getErrorMessage(error));
     }
   }
 
@@ -91,39 +104,31 @@ class JiraService {
     return {
       key: issue.key,
       id: issue.id,
-      summary: issue.fields.summary,
-      description: issue.fields.description,
+      summary: issue.summary,
+      description: issue.description,
       status: {
-        name: issue.fields.status.name,
-        category: issue.fields.status.statusCategory.name,
-        color: issue.fields.status.statusCategory.colorName
+        name: issue.status.name,
+        category: issue.status.category,
+        color: issue.status.color
       },
       priority: {
-        name: issue.fields.priority?.name || 'None',
-        level: this.getPriorityLevel(issue.fields.priority?.name)
+        name: issue.priority.name,
+        level: issue.priority.level
       },
       issueType: {
-        name: issue.fields.issuetype.name,
-        icon: issue.fields.issuetype.iconUrl
+        name: issue.issueType.name,
+        icon: issue.issueType.icon
       },
-      assignee: issue.fields.assignee ? {
-        displayName: issue.fields.assignee.displayName,
-        emailAddress: issue.fields.assignee.emailAddress,
-        avatar: issue.fields.assignee.avatarUrls['32x32']
-      } : null,
-      reporter: {
-        displayName: issue.fields.reporter.displayName,
-        emailAddress: issue.fields.reporter.emailAddress,
-        avatar: issue.fields.reporter.avatarUrls['32x32']
-      },
+      assignee: issue.assignee,
+      reporter: issue.reporter,
       project: {
-        key: issue.fields.project.key,
-        name: issue.fields.project.name,
-        avatar: issue.fields.project.avatarUrls['32x32']
+        key: issue.project.key,
+        name: issue.project.name,
+        avatar: issue.project.avatar
       },
-      created: new Date(issue.fields.created),
-      updated: new Date(issue.fields.updated),
-      url: `${this.baseURL}/browse/${issue.key}`
+      created: new Date(issue.created),
+      updated: new Date(issue.updated),
+      url: issue.url
     };
   };
 
@@ -147,12 +152,13 @@ class JiraService {
    */
   async updateTicketStatus(issueKey, transitionId) {
     try {
-      const response = await this.api.post(`/issue/${issueKey}/transitions`, {
-        transition: { id: transitionId }
+      const response = await this.api.post(`/tickets/${issueKey}/transition`, {
+        transitionId: transitionId
       });
       return response.data;
     } catch (error) {
-      throw new Error(`Failed to update ticket status: ${error.message}`);
+      console.error('Failed to update ticket status:', error);
+      throw new Error(this.getErrorMessage(error));
     }
   }
 
@@ -161,39 +167,51 @@ class JiraService {
    */
   async getAvailableTransitions(issueKey) {
     try {
-      const response = await this.api.get(`/issue/${issueKey}/transitions`);
+      const response = await this.api.get(`/tickets/${issueKey}/transitions`);
       return response.data.transitions;
     } catch (error) {
-      throw new Error(`Failed to get transitions: ${error.message}`);
+      console.error('Failed to get transitions:', error);
+      throw new Error(this.getErrorMessage(error));
     }
   }
 
   /**
-   * Add comment to ticket
+   * Add comment to ticket (with validation)
    */
   async addComment(issueKey, comment) {
     try {
-      const response = await this.api.post(`/issue/${issueKey}/comment`, {
-        body: {
-          type: 'doc',
-          version: 1,
-          content: [
-            {
-              type: 'paragraph',
-              content: [
-                {
-                  type: 'text',
-                  text: comment
-                }
-              ]
-            }
-          ]
-        }
+      // Basic client-side validation
+      if (!comment || typeof comment !== 'string' || comment.trim().length === 0) {
+        throw new Error('Comment cannot be empty');
+      }
+      
+      if (comment.length > 2000) {
+        throw new Error('Comment too long (max 2000 characters)');
+      }
+      
+      const response = await this.api.post(`/tickets/${issueKey}/comment`, {
+        comment: comment.trim()
       });
       return response.data;
     } catch (error) {
-      throw new Error(`Failed to add comment: ${error.message}`);
+      console.error('Failed to add comment:', error);
+      throw new Error(this.getErrorMessage(error));
     }
+  }
+  
+  /**
+   * Extract user-friendly error messages from API responses
+   */
+  getErrorMessage(error) {
+    if (error.response?.data?.error) {
+      return error.response.data.error;
+    }
+    
+    if (error.message) {
+      return error.message;
+    }
+    
+    return 'An unexpected error occurred. Please try again later.';
   }
 }
 
