@@ -24,11 +24,16 @@ class SessionManager {
     const sessionId = crypto.randomUUID();
     const now = new Date();
     
+    // Support both local auth (id, email, username) and Jira auth (accountId, emailAddress, displayName)
+    const userId = userInfo.id || userInfo.accountId;
+    const userEmail = userInfo.email || userInfo.emailAddress;
+    const userDisplayName = userInfo.username || userInfo.displayName || userInfo.email || userInfo.emailAddress;
+    
     const session = {
       id: sessionId,
-      userId: userInfo.accountId,
-      userEmail: userInfo.emailAddress,
-      userDisplayName: userInfo.displayName,
+      userId: userId,
+      userEmail: userEmail,
+      userDisplayName: userDisplayName,
       createdAt: now,
       lastActivity: now,
       ipAddress: this.getClientIP(req),
@@ -39,8 +44,8 @@ class SessionManager {
     // Generate JWT token
     const token = jwt.sign({
       sessionId,
-      userId: userInfo.accountId,
-      email: userInfo.emailAddress,
+      userId: userId,
+      email: userEmail,
       iat: Math.floor(Date.now() / 1000),
       exp: Math.floor((Date.now() + this.sessionTimeout) / 1000)
     }, this.jwtSecret);
@@ -50,8 +55,8 @@ class SessionManager {
     // Log session creation for audit trail
     this.logSecurityEvent('SESSION_CREATED', {
       sessionId,
-      userId: userInfo.accountId,
-      userEmail: userInfo.emailAddress,
+      userId: userId,
+      userEmail: userEmail,
       ipAddress: session.ipAddress,
       userAgent: session.userAgent
     });
