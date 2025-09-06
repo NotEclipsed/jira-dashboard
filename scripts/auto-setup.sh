@@ -25,11 +25,32 @@ get_user_config() {
     echo -e "${YELLOW}📝 Please provide your Jira configuration:${NC}"
     echo ""
     
-    read -p "Jira Base URL (e.g., https://company.atlassian.net): " JIRA_BASE_URL
-    read -p "Your Jira Email: " JIRA_EMAIL
-    echo -n "Your Jira API Token: "
-    read -s JIRA_API_TOKEN
-    echo ""
+    # Ensure we have a proper terminal for input
+    exec < /dev/tty
+    
+    while [[ -z "$JIRA_BASE_URL" ]]; do
+        read -p "Jira Base URL (e.g., https://company.atlassian.net): " JIRA_BASE_URL
+        if [[ -z "$JIRA_BASE_URL" ]]; then
+            echo -e "${RED}Please enter a valid Jira Base URL${NC}"
+        fi
+    done
+    
+    while [[ -z "$JIRA_EMAIL" ]]; do
+        read -p "Your Jira Email: " JIRA_EMAIL
+        if [[ -z "$JIRA_EMAIL" ]]; then
+            echo -e "${RED}Please enter a valid email address${NC}"
+        fi
+    done
+    
+    while [[ -z "$JIRA_API_TOKEN" ]]; do
+        echo -n "Your Jira API Token (input will be hidden): "
+        read -s JIRA_API_TOKEN
+        echo ""
+        if [[ -z "$JIRA_API_TOKEN" ]]; then
+            echo -e "${RED}Please enter your Jira API token${NC}"
+        fi
+    done
+    
     echo ""
     
     # Generate secure JWT secret automatically
@@ -40,13 +61,11 @@ get_user_config() {
         JWT_SECRET=$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 64)
     fi
     
-    # Validate inputs
-    if [[ -z "$JIRA_BASE_URL" || -z "$JIRA_EMAIL" || -z "$JIRA_API_TOKEN" ]]; then
-        echo -e "${RED}❌ Error: All fields are required${NC}"
-        exit 1
-    fi
-    
-    echo -e "${GREEN}✅ Configuration collected${NC}"
+    echo -e "${GREEN}✅ Configuration collected successfully!${NC}"
+    echo "   Jira URL: $JIRA_BASE_URL"
+    echo "   Email: $JIRA_EMAIL"
+    echo "   API Token: [HIDDEN]"
+    echo ""
 }
 
 # Function to install system dependencies
